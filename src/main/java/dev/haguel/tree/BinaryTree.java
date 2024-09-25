@@ -31,10 +31,6 @@ public class BinaryTree<T, V> implements Tree<T, V> {
         cleanTree(tree);
     }
 
-    private boolean isEmpty() {
-        return node == null && right == null && left == null;
-    }
-
     private void transformTo_remainLeft(BinaryTree tree) {
         this.right = tree.getRight();
         this.node = tree.getNode();
@@ -42,25 +38,47 @@ public class BinaryTree<T, V> implements Tree<T, V> {
         cleanTree(tree);
     }
 
+    private boolean isEmpty() {
+        return node == null && right == null && left == null;
+    }
+
+    private void ensureCorrectInstance(Tree tree) throws InvalidObjectException {
+        if (!(tree instanceof BinaryTree)) {
+            throw new InvalidObjectException("Can't make action with current tree because it's not instance of BinaryTree");
+        }
+    }
+
+    private void addBeforeLeft(Node toAdd) throws InvalidObjectException {
+        BinaryTree temp = left;
+        left = new BinaryTree<>(toAdd);
+        left.setLeft(temp);
+        left.setRight(null);
+    }
+
+    private void addBeforeRight(Node toAdd) throws InvalidObjectException {
+        BinaryTree temp = right;
+        right = new BinaryTree<>(toAdd);
+        right.setLeft(temp);
+        right.setRight(null);
+    }
+
     @Override
-    public boolean addNode(Node<T, V> toAdd) {
+    public void addNode(Node<T, V> toAdd) {
         int compare = toAdd.compareTo(node);
 
         if(compare > 0) {
             if (right == null) {
                 right = new BinaryTree<>(toAdd);
             } else {
-                return right.addNode(toAdd);
+                right.addNode(toAdd);
             }
         } else {
             if (left == null) {
                 left = new BinaryTree<>(toAdd);
             } else {
-                return left.addNode(toAdd);
+                left.addNode(toAdd);
             }
         }
-
-        return true;
     }
 
     @Override
@@ -127,13 +145,5 @@ public class BinaryTree<T, V> implements Tree<T, V> {
 
         ensureCorrectInstance(left);
         this.left = (BinaryTree<T, V>) left;
-    }
-
-
-
-    public void ensureCorrectInstance(Tree tree) throws InvalidObjectException {
-        if (!(tree instanceof BinaryTree)) {
-            throw new InvalidObjectException("Can't make action with current tree because it's not instance of BinaryTree");
-        }
     }
 }

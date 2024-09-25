@@ -7,8 +7,8 @@ import dev.haguel.tree.BinaryTree;
 import java.io.InvalidObjectException;
 
 public class App {
-    public static void main(String[] args) throws InvalidObjectException {
-        BinaryTree<Integer, Integer> tree = new BinaryTree<>(NodeFactory.generateIntNode(1, 20));
+    public static void main(String[] args) {
+        BinaryTree<Integer, Integer> tree = new BinaryTree<>(NodeFactory.generateIntNode(1, 100));
 
         // If you are using InteliJ Idea console, tree output might be crooked
         // because its console can't handle large tree.
