@@ -7,7 +7,7 @@ import java.io.InvalidObjectException;
 
 @NoArgsConstructor
 @Data
-public class BinaryTree<T, V> implements Tree<T, V> {
+public class BinaryTree<T, V> implements NonBalancedTree<T, V> {
     private Node<T, V> node;
     private BinaryTree<T, V> right, left;
 
@@ -125,7 +125,6 @@ public class BinaryTree<T, V> implements Tree<T, V> {
         }
     }
 
-    @Override
     public void setRight(Tree<T, V> right) throws InvalidObjectException {
         if(right == null) {
             this.right = null;
@@ -136,7 +135,6 @@ public class BinaryTree<T, V> implements Tree<T, V> {
         this.right = (BinaryTree<T, V>) right;
     }
 
-    @Override
     public void setLeft(Tree<T, V> left) throws InvalidObjectException {
         if(left == null) {
             this.left = null;
