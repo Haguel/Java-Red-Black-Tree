@@ -1,23 +1,24 @@
 package dev.haguel.service;
 
 import dev.haguel.tree.Tree;
+import dev.haguel.tree.TreeableNode;
 
 import java.util.ArrayList;
 import java.util.List;
 
 public class TreePrinter {
-    public static void print(Tree root)
+    public static void print(TreeableNode root)
     {
         if(root.getLeft() == null && root.getRight() == null) {
-            System.out.println(root.getNode().getKey());
+            System.out.println(root.getKey());
 
             return;
         }
 
         List<List<String>> lines = new ArrayList<>();
 
-        List<Tree> level = new ArrayList<>();
-        List<Tree> next = new ArrayList<>();
+        List<TreeableNode> level = new ArrayList<>();
+        List<TreeableNode> next = new ArrayList<>();
 
         level.add(root);
         int nn = 1;
@@ -29,19 +30,19 @@ public class TreePrinter {
 
             nn = 0;
 
-            for (Tree n : level) {
+            for (TreeableNode n : level) {
                 if (n == null) {
                     line.add(null);
 
                     next.add(null);
                     next.add(null);
                 } else {
-                    String aa = String.valueOf(n.getNode().getKey());
+                    String aa = String.valueOf(n.getKey());
                     line.add(aa);
                     if (aa.length() > widest) widest = aa.length();
 
-                    next.add(n.getLeft());
-                    next.add(n.getRight());
+                    next.add((TreeableNode) n.getLeft());
+                    next.add((TreeableNode) n.getRight());
 
                     if (n.getLeft() != null) nn++;
                     if (n.getRight() != null) nn++;
@@ -52,7 +53,7 @@ public class TreePrinter {
 
             lines.add(line);
 
-            List<Tree> tmp = level;
+            List<TreeableNode> tmp = level;
             level = next;
             next = tmp;
             next.clear();

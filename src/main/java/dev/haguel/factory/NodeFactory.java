@@ -1,6 +1,7 @@
 package dev.haguel.factory;
 
-import dev.haguel.tree.IntNode;
+import dev.haguel.tree.BinaryTreeSimpleNode;
+import dev.haguel.tree.SimpleNode;
 
 import java.util.Random;
 
@@ -11,9 +12,9 @@ public class NodeFactory {
         random = new Random();
     }
 
-    public static IntNode generateIntNode(int min, int max) {
+    public static BinaryTreeSimpleNode generateBinaryTreeSimpleNode(int min, int max) {
         int number = random.nextInt(max + 1 - min) + min;
 
-        return new IntNode(number, number);
+        return new BinaryTreeSimpleNode(number);
     }
 }
