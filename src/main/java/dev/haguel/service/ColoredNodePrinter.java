@@ -1,13 +1,12 @@
 package dev.haguel.service;
 
-import dev.haguel.tree.Tree;
-import dev.haguel.tree.TreeableNode;
+import dev.haguel.node.ColoredSimpleNode;
 
 import java.util.ArrayList;
 import java.util.List;
 
-public class TreePrinter {
-    public static void print(TreeableNode root)
+public class ColoredNodePrinter {
+    public static void print(ColoredSimpleNode root)
     {
         if(root.getLeft() == null && root.getRight() == null) {
             System.out.println(root.getKey());
@@ -17,8 +16,8 @@ public class TreePrinter {
 
         List<List<String>> lines = new ArrayList<>();
 
-        List<TreeableNode> level = new ArrayList<>();
-        List<TreeableNode> next = new ArrayList<>();
+        List<ColoredSimpleNode> level = new ArrayList<>();
+        List<ColoredSimpleNode> next = new ArrayList<>();
 
         level.add(root);
         int nn = 1;
@@ -30,19 +29,19 @@ public class TreePrinter {
 
             nn = 0;
 
-            for (TreeableNode n : level) {
+            for (ColoredSimpleNode n : level) {
                 if (n == null) {
                     line.add(null);
 
                     next.add(null);
                     next.add(null);
                 } else {
-                    String aa = String.valueOf(n.getKey());
+                    String aa = String.valueOf(n.getKey() + " " + (n.isBlack() ? "B" : "R"));
                     line.add(aa);
                     if (aa.length() > widest) widest = aa.length();
 
-                    next.add((TreeableNode) n.getLeft());
-                    next.add((TreeableNode) n.getRight());
+                    next.add((ColoredSimpleNode) n.getLeft());
+                    next.add((ColoredSimpleNode) n.getRight());
 
                     if (n.getLeft() != null) nn++;
                     if (n.getRight() != null) nn++;
@@ -53,7 +52,7 @@ public class TreePrinter {
 
             lines.add(line);
 
-            List<TreeableNode> tmp = level;
+            List<ColoredSimpleNode> tmp = level;
             level = next;
             next = tmp;
             next.clear();

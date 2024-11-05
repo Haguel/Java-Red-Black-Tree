@@ -1,4 +1,6 @@
-package dev.haguel.tree;
+package dev.haguel.node;
+
+import dev.haguel.tree.Tree;
 
 import java.io.InvalidObjectException;
 
@@ -14,4 +16,5 @@ public interface Node<T, V> extends Comparable<Node<T, V>> {
 
     void addNode(Node<T, V> node) throws InvalidObjectException;
     void removeNode() throws InvalidObjectException;
+    Tree<T, V> getTree();
 }

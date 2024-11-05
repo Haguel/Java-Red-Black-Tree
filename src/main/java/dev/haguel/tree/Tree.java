@@ -1,6 +1,6 @@
 package dev.haguel.tree;
 
-import java.io.InvalidObjectException;
+import dev.haguel.node.Node;
 
 public interface Tree <T, V>{
     Node<T, V> getRoot();

@@ -1,5 +1,6 @@
-package dev.haguel.tree;
+package dev.haguel.node;
 
+import dev.haguel.tree.TreeImpl;
 import lombok.AllArgsConstructor;
 import lombok.Data;
 import lombok.NoArgsConstructor;
@@ -8,7 +9,6 @@ import java.io.InvalidObjectException;
 import java.util.Comparator;
 
 @AllArgsConstructor
-@NoArgsConstructor
 @Data
 public class SimpleNode<T extends Comparable<T>> implements Node<T, T> {
     private T key;
@@ -56,20 +56,6 @@ public class SimpleNode<T extends Comparable<T>> implements Node<T, T> {
         }
     }
 
-    private void addBeforeLeft(SimpleNode<T> toAdd) throws InvalidObjectException {
-        SimpleNode<T> temp = left;
-        left = toAdd;
-        left.setLeft(temp);
-        left.setRight(null);
-    }
-
-    private void addBeforeRight(SimpleNode<T> toAdd) throws InvalidObjectException {
-        SimpleNode<T> temp = right;
-        right = toAdd;
-        right.setLeft(temp);
-        right.setRight(null);
-    }
-
     @Override
     public void addNode(Node<T, T> toAdd) throws InvalidObjectException {
         ensureCorrectInstance(toAdd);
@@ -110,7 +96,7 @@ public class SimpleNode<T extends Comparable<T>> implements Node<T, T> {
                 transformTo_remainLeft(getRight());
             } else {
                 // if right subtree DOES have left subtree
-                // -> set the least node of left subtree
+                // -> set the deepest node of left subtree
                 SimpleNode<T> deepestLeft = getRight().getLeft();
                 SimpleNode<T> deepestLeftAncestor = getRight();
 
@@ -127,13 +113,23 @@ public class SimpleNode<T extends Comparable<T>> implements Node<T, T> {
 
                 // if deepest is replaced with its right subtree this part would be skipped
                 if(deepestLeftAncestor.left.isEmpty()) {
-
                     deepestLeftAncestor.setLeft(null);
                 }
-
-                toString();
             }
         }
+    }
+
+    @Override
+    public TreeImpl<T, T> getTree() {
+        SimpleNode copy = new SimpleNode(this.getKey());
+        try {
+            copy.setLeft(this.getLeft());
+            copy.setRight(this.getRight());
+        } catch (InvalidObjectException e) {
+            e.printStackTrace();
+        }
+
+        return new TreeImpl<>(copy);
     }
 
     @Override
