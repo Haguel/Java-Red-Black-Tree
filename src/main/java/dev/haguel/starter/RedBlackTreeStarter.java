@@ -12,7 +12,7 @@ public class RedBlackTreeStarter {
         // If you are using InteliJ Idea console, tree output might be crooked
         // because its console can't handle large tree.
         // Therefore, it's not recommend to set node count bigger than 9
-        int nodeCount = 9;
+        int nodeCount = 10;
 
         try {
             int toAdd = Generator.generateRandomInt(1, 100);
@@ -26,6 +26,7 @@ public class RedBlackTreeStarter {
                 System.out.println("Node to add: " + toAdd);
 
                 coloredNode.addNode(new ColoredSimpleNode<>(toAdd));
+                coloredNode = coloredNode.getRoot();
                 ColoredNodePrinter.print(coloredNode);
             }
 
