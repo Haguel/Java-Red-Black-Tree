@@ -34,32 +34,328 @@ public class ColoredSimpleNode<T extends Comparable<T>> implements Node<T, T> {
         this.parent = parent;
     }
 
-    private void cleanNode() {
+    private void cleanNode() throws InvalidObjectException {
         right = null;
         left = null;
         key = null;
         value = null;
+
+        if(parent != null) {
+            if(parent.getLeft() == this) {
+                parent.setLeft(null);
+            } else {
+                parent.setRight(null);
+            }
+        }
     }
 
-    private void transformTo(ColoredSimpleNode<T> node) {
-        this.right = node.getRight();
-        this.left = node.getLeft();
-        node.key = null;
-        node.value = null;
-
-        node.cleanNode();
+    private boolean hasBothChildren() {
+        return left != null && right != null;
     }
 
-    private void transformTo_remainLeft(ColoredSimpleNode<T> node) {
-        this.right = node.getRight();
-        this.value = node.getValue();
-        this.key = node.getKey();
-
-        node.cleanNode();
+    private boolean hasOnlyRightChild() {
+        return left == null && right != null;
     }
 
-    private boolean isEmpty() {
-        return key == null && value == null && right == null && left == null;
+    private boolean hasOnlyLeftChild() {
+        return left != null && right == null;
+    }
+
+    private boolean hasNoChildren() {
+        return left == null && right == null;
+    }
+
+    private ColoredSimpleNode<T> getSibling() {
+        if(parent == null) {
+            return null;
+        }
+
+        if(parent.getLeft() == this) {
+            return parent.getRight();
+        } else {
+            return parent.getLeft();
+        }
+    }
+
+    private void makeRotationToRight() throws InvalidObjectException {
+        ColoredSimpleNode<T> parentLink = parent;
+        ColoredSimpleNode<T> grandParent = parent.getParent();
+
+        parentLink.setLeft(this.getRight());
+        this.setRight(parentLink);
+
+        fixRelations(this, parentLink, grandParent);
+    }
+
+    private void makeRotationToLeft() throws InvalidObjectException {
+        ColoredSimpleNode<T> parentLink = parent;
+        ColoredSimpleNode<T> grandParent = parent.getParent();
+
+        parentLink.setRight(this.getLeft());
+        this.setLeft(parentLink);
+
+        fixRelations(this, parentLink, grandParent);
+    }
+
+    private void rotateRedSibling() throws InvalidObjectException {
+        ColoredSimpleNode<T> grandParent = parent.getParent();
+
+        // if sibling is right child of parent
+        if(parent.getLeft() == this) {
+            ColoredSimpleNode<T> sibling = parent.getRight();
+            ColoredSimpleNode<T> siblingLeftChild = sibling.getLeft();
+            ColoredSimpleNode<T> siblingRightChild;
+
+            parent.setRight(siblingLeftChild);
+            sibling.setLeft(parent);
+
+            fixRelations(sibling, parent, grandParent);
+
+            parent.setRed();
+            sibling.setBlack();
+
+            // after rotation parent becomes red node with right black node and black sibling -> need rotation
+            // previous sibling is now sibling of parent.
+            sibling = parent.getRight();
+
+            if(sibling.hasBothChildren() || sibling.hasOnlyLeftChild()) {
+                siblingLeftChild = sibling.getLeft();
+                siblingLeftChild.makeRLRotation();
+
+                siblingLeftChild.setRed();
+                siblingLeftChild.getRight().setBlack();
+                siblingLeftChild.getLeft().setBlack();
+            } else if (sibling.hasOnlyRightChild()) {
+                siblingRightChild = sibling.getRight();
+                siblingRightChild.makeRRRotationRecolor(siblingRightChild.makeRRRotation());
+            } else {
+                sibling.makeRotationToLeft();
+            }
+        } else {
+            ColoredSimpleNode<T> sibling = parent.getLeft();
+            ColoredSimpleNode<T> siblingRightChild = sibling.getRight();
+            ColoredSimpleNode<T> siblingLeftChild;
+
+            parent.setLeft(siblingRightChild);
+            sibling.setRight(parent);
+
+            fixRelations(sibling, parent, grandParent);
+
+            parent.setRed();
+            sibling.setBlack();
+
+            // after rotation parent becomes red node with right black node and black sibling -> need rotation
+            // previous sibling is now sibling of parent.
+            sibling = parent.getLeft();
+
+            if(sibling.hasBothChildren() || sibling.hasOnlyRightChild()) {
+                siblingRightChild = sibling.getRight();
+                siblingRightChild.makeLRRotation();
+
+                siblingRightChild.setRed();
+                siblingRightChild.getRight().setBlack();
+                siblingRightChild.getLeft().setBlack();
+            } else if (sibling.hasOnlyLeftChild()) {
+                siblingLeftChild = sibling.getLeft();
+                siblingLeftChild.makeLLRotationRecolor(siblingLeftChild.makeLLRotation());
+            } else {
+                sibling.makeRotationToRight();
+            }
+        }
+    }
+
+    private void recolorBlackSiblingBothChildrenBlackCase(ColoredSimpleNode<T> sibling) throws InvalidObjectException {
+        sibling.setRed();
+
+        if(!parent.isBlack) {
+            parent.setBlack();
+        } else {
+            parent.rebalanceAfterRemoval();
+        }
+    }
+
+    private void rotateBlackSibling() throws InvalidObjectException {
+        ColoredSimpleNode<T> grandParent = parent.getParent();
+        ColoredSimpleNode<T> parentLink = parent;
+        ColoredSimpleNode<T> sibling = getSibling();
+        ColoredSimpleNode<T> siblingLeftChild = sibling.getLeft();
+        ColoredSimpleNode<T> siblingRightChild = sibling.getRight();
+
+        // if both children of sibling are black (null children are considered as black)
+        if((sibling.hasBothChildren() && siblingLeftChild.isBlack && siblingRightChild.isBlack) || sibling.hasNoChildren()) {
+            recolorBlackSiblingBothChildrenBlackCase(sibling);
+        }
+
+        // if sibling is right child of parent
+        if(parent.getRight() == sibling) {
+            // if left child of sibling is red and the right one is black
+            if (sibling.hasBothChildren() && !siblingLeftChild.isBlack && siblingRightChild.isBlack) {
+                siblingLeftChild.makeRotationToRight();
+
+                siblingLeftChild.setBlack();
+                sibling.setRed();
+
+                // rotate again but now sibling must be with right red child (see next else if case)
+                rotateBlackSibling();
+            }
+            // if right child of sibling is red
+            else if (siblingRightChild != null && !siblingRightChild.isBlack) {
+                parent.setRight(siblingLeftChild);
+                sibling.setLeft(parent);
+
+                fixRelations(sibling, parent, grandParent);
+
+                siblingRightChild.setBlack();
+                sibling.isBlack = parentLink.isBlack;
+                parentLink.setBlack();
+            }
+            // if left child of sibling is red
+            else if (siblingLeftChild != null && !siblingLeftChild.isBlack) {
+                siblingLeftChild.makeRLRotation();
+
+                siblingLeftChild.isBlack = parentLink.isBlack;
+                parentLink.setBlack();
+            }
+        // if sibling is left child of parent
+        } else {
+            // if right child of sibling is red and the left one is black
+            if (sibling.hasBothChildren() && !siblingRightChild.isBlack && siblingLeftChild.isBlack) {
+                siblingRightChild.makeRotationToLeft();
+
+                siblingRightChild.setBlack();
+                sibling.setRed();
+
+                // rotate again but now sibling must be with right red child (see next else if case)
+                rotateBlackSibling();
+            }
+            // if left child of sibling is red
+            else if (siblingLeftChild != null && !siblingLeftChild.isBlack) {
+                parent.setLeft(siblingRightChild);
+                sibling.setRight(parent);
+
+                fixRelations(sibling, parent, grandParent);
+
+                siblingLeftChild.setBlack();
+                sibling.isBlack = parentLink.isBlack;
+                parentLink.setBlack();
+            }
+            // if right child of sibling is red
+            else if (siblingRightChild != null && !siblingRightChild.isBlack) {
+                siblingRightChild.makeLRRotation();
+
+                siblingRightChild.isBlack = parentLink.isBlack;
+                parentLink.setBlack();
+            }
+        }
+    }
+
+    private void rebalanceAfterRemoval() throws InvalidObjectException {
+        if(this.getParent() == null) return;
+
+        ColoredSimpleNode<T> sibling = null;
+        // define sibling
+        if(parent.getLeft() == this) {
+            sibling = parent.getRight();
+        } else {
+            sibling = parent.getLeft();
+        }
+
+        // rotate sibling
+        if(sibling.isBlack) {
+            rotateBlackSibling();
+        } else {
+            rotateRedSibling();
+        }
+    }
+
+    private void exchangeWith(ColoredSimpleNode<T> node) {
+        T tempKey = key;
+        T tempValue = value;
+
+        key = node.getKey();
+        value = node.getValue();
+
+        node.setKey(tempKey);
+        node.setValue(tempValue);
+    }
+
+    // returns parent of removed node
+    private ColoredSimpleNode<T> removeThis() throws InvalidObjectException {
+        ColoredSimpleNode<T> parentLink = parent;
+
+        if(this.hasBothChildren()) {
+            ColoredSimpleNode<T> minRight = right.getDeepestLeft();
+            ColoredSimpleNode<T> maxLeft = left.getDeepestRight();
+            ColoredSimpleNode<T> exchangeNode = null;
+
+            if(minRight != null && !minRight.isBlack) {
+                exchangeNode = minRight;
+            } else if (maxLeft != null && !maxLeft.isBlack) {
+                exchangeNode = maxLeft;
+            } else if (minRight != null) {
+                exchangeNode = minRight;
+            } else if (maxLeft != null) {
+                exchangeNode = maxLeft;
+            } else {
+                exchangeNode = right;
+            }
+
+            exchangeWith(exchangeNode);
+            exchangeNode.removeThis();
+
+            return this;
+        }
+
+        if(!this.isBlack) {
+            // if node is red and has no children
+            if(right == null && left == null) {
+                cleanNode();
+
+                return parentLink;
+            }
+            // red node with 1 child is impossible
+        } else {
+            // if node is black and has only right child
+            if(right != null && left == null) {
+                exchangeWith(right);
+                right.removeThis();
+
+                return this;
+            }
+            // if node is black and has only left child
+            else if(left != null && right == null) {
+                exchangeWith(left);
+                left.removeThis();
+
+                return this;
+            }
+            // if node is black and has no children
+            else {
+                rebalanceAfterRemoval();
+                parentLink = parent;
+                cleanNode();
+
+                return parentLink;
+            }
+        }
+
+        return parentLink;
+    }
+
+    private ColoredSimpleNode<T> getDeepestLeft() {
+        if(left == null) {
+            return this;
+        } else {
+            return left.getDeepestLeft();
+        }
+    }
+
+    private ColoredSimpleNode<T> getDeepestRight() {
+        if(right == null) {
+            return this;
+        } else {
+            return right.getDeepestRight();
+        }
     }
 
     private <V> void ensureCorrectInstance(Node<T, V> node) throws InvalidObjectException {
@@ -68,24 +364,26 @@ public class ColoredSimpleNode<T extends Comparable<T>> implements Node<T, T> {
         }
     }
 
-    public void checkBalance() throws InvalidObjectException {
+    public boolean isBalanced() {
         if(parent == null) {
-            return;
+            return true;
         }
 
         ColoredSimpleNode<T> grandParent = parent.getParent();
 
         if(grandParent == null) {
-            return;
+            return true;
         }
 
         // if not balanced
         if (!this.isBlack && !parent.isBlack) {
-            rebalance();
+            return false;
         }
+
+        return true;
     }
 
-    public void rebalance() throws InvalidObjectException {
+    private void rebalanceAfterAddition() throws InvalidObjectException {
         ColoredSimpleNode<T> grandParent = parent.getParent();
 
         if(grandParent.getLeft() == parent) {
@@ -94,8 +392,9 @@ public class ColoredSimpleNode<T extends Comparable<T>> implements Node<T, T> {
             if(uncle == null || uncle.isBlack) {
                 if(parent.getRight() == this) {
                     makeLRRotation();
+                    makeLRRotationRecolor();
                 } else {
-                    makeLLRotation();
+                    makeLLRotationRecolor(makeLLRotation());
                 }
             } else {
                 recolorRedUncleCase(uncle);
@@ -106,8 +405,9 @@ public class ColoredSimpleNode<T extends Comparable<T>> implements Node<T, T> {
             if(uncle == null || uncle.isBlack) {
                 if(parent.getLeft() == this) {
                     makeRLRotation();
+                    makeRLRotationRecolor();
                 } else {
-                    makeRRRotation();
+                    makeRRRotationRecolor(makeRRRotation());
                 }
             } else {
                 recolorRedUncleCase(uncle);
@@ -127,7 +427,9 @@ public class ColoredSimpleNode<T extends Comparable<T>> implements Node<T, T> {
 
         // After this node replaced grandparent it needs to set grandparent's parent as parent
         fixRelations(this, grandParent, grandGrandParent);
+    }
 
+    private void makeLRRotationRecolor() {
         this.getRight().setRed();
         this.setBlack();
     }
@@ -144,37 +446,51 @@ public class ColoredSimpleNode<T extends Comparable<T>> implements Node<T, T> {
 
         // After this node replaced grandparent it needs to set grandparent's parent as parent
         fixRelations(this, grandParent, grandGrandParent);
+    }
 
+    private void makeRLRotationRecolor() {
         this.getLeft().setRed();
         this.setBlack();
     }
 
-    private void makeLLRotation() throws InvalidObjectException {
+    private ColoredSimpleNode<T> makeLLRotation() throws InvalidObjectException {
         ColoredSimpleNode<T> grandParent = parent.getParent();
         ColoredSimpleNode<T> grandGrandParent = grandParent.getParent();
         ColoredSimpleNode<T> parentLink = parent;
 
         grandParent.setLeft(parentLink.getRight());
         parentLink.setRight(grandParent);
+
         fixRelations(parentLink, grandParent, grandGrandParent);
 
         ColoredSimpleNode<T> newUncle = parentLink.getRight();
+
+        return newUncle;
+    }
+
+    private void makeLLRotationRecolor(ColoredSimpleNode<T> newUncle) {
         newUncle.setRed();
         if(newUncle.getLeft() != null) newUncle.getLeft().setBlack();
 
         parent.setBlack();
     }
 
-    private void makeRRRotation() throws InvalidObjectException {
+    private ColoredSimpleNode<T> makeRRRotation() throws InvalidObjectException {
         ColoredSimpleNode<T> grandParent = parent.getParent();
         ColoredSimpleNode<T> grandGrandParent = grandParent.getParent();
         ColoredSimpleNode<T> parentLink = parent;
 
         grandParent.setRight(parentLink.getLeft());
         parentLink.setLeft(grandParent);
+
         fixRelations(parentLink, grandParent, grandGrandParent);
 
         ColoredSimpleNode<T> newUncle = parentLink.getLeft();
+
+        return newUncle;
+    }
+
+    private void makeRRRotationRecolor(ColoredSimpleNode<T> newUncle) {
         newUncle.setRed();
         if(newUncle.getRight() != null) newUncle.getRight().setBlack();
 
@@ -197,20 +513,24 @@ public class ColoredSimpleNode<T extends Comparable<T>> implements Node<T, T> {
             if(!grandGrandParent.isBlack) {
                 // if grandGrandParent is root -> recolor grandParent to black
                 if(grandGrandParent.getRoot() == null) grandParent.setBlack();
-                    // else -> check balance
-                else grandParent.checkBalance();
+                // else -> check balance
+                else {
+                    if(!grandParent.isBalanced()) {
+                        grandParent.rebalanceAfterAddition();
+                    }
+                }
             }
         }
     }
 
-    private void fixRelations(ColoredSimpleNode<T> newGrandParent, ColoredSimpleNode<T> oldGrandParent, ColoredSimpleNode<T> grandGrandParent) throws InvalidObjectException {
-        if(grandGrandParent == null) {
-            newGrandParent.setParent(null);
+    private void fixRelations(ColoredSimpleNode<T> newNode, ColoredSimpleNode<T> oldNode, ColoredSimpleNode<T> oldNodeParent) throws InvalidObjectException {
+        if(oldNodeParent == null) {
+            newNode.setParent(null);
         } else {
-            if(grandGrandParent.getLeft() == oldGrandParent) {
-                grandGrandParent.setLeft(newGrandParent);
+            if(oldNodeParent.getLeft() == oldNode) {
+                oldNodeParent.setLeft(newNode);
             } else {
-                grandGrandParent.setRight(newGrandParent);
+                oldNodeParent.setRight(newNode);
             }
         }
     }
@@ -226,7 +546,9 @@ public class ColoredSimpleNode<T extends Comparable<T>> implements Node<T, T> {
 
                 // if parent is red and right child is red -> rebalance
                 if(!isBlack && !right.isBlack) {
-                    right.checkBalance();
+                    if(!right.isBalanced()) {
+                        right.rebalanceAfterAddition();
+                    }
                 }
             } else {
                 right.addNode(toAddNode);
@@ -237,7 +559,9 @@ public class ColoredSimpleNode<T extends Comparable<T>> implements Node<T, T> {
 
                 // if parent is red and left child is red -> rebalance
                 if(!isBlack && !left.isBlack) {
-                    left.checkBalance();
+                    if(!left.isBalanced()) {
+                        left.rebalanceAfterAddition();
+                    }
                 }
             } else {
                 left.addNode(toAddNode);
@@ -248,6 +572,16 @@ public class ColoredSimpleNode<T extends Comparable<T>> implements Node<T, T> {
     @Override
     public void removeNode() throws InvalidObjectException {
 
+    }
+
+    public ColoredSimpleNode<T> removeNodeTest() throws InvalidObjectException {
+        if(left == null && right == null) {
+            cleanNode();
+
+            return null;
+        }
+
+        return removeThis();
     }
 
     @Override
