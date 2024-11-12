@@ -1,6 +1,6 @@
 # Red-Black Tree Project
 
-This project implements binary tree & red-black trees with nodes that can be added and removed. The nodes are implementations of the `Node` class, and the tree is printed using the `BinaryNodePrinter` or `ColoredNodePrinter` class.
+This project implements binary & red-black trees with nodes that can be added and removed. The nodes are implementations of the `Node` class, and the tree is printed using the `BinaryNodePrinter` or `ColoredNodePrinter` class.
 
 ## Technologies and Libraries
 
@@ -37,6 +37,14 @@ src/
 - `getTree()`: Returns a copy of the tree.
 - `setRight(Node<T, T> right)`: Sets the right child of the node.
 - `setLeft(Node<T, T> left)`: Sets the left child of the node.
+- `setParent(Node<T, T> parent)`: Sets the parent of the node.
+- `getKey()`: Returns the key of the node.
+- `getValue()`: Returns the value of the node.
+- `getRight()`: Returns the right child of the node.
+- `getLeft()`: Returns the left child of the node.
+- `findNode()`: Finds and returns the current node.
+- `findNodeByKey(T key)`: Finds and returns a node with the specified key.
+- `findNodeByValue(V value)`: Finds and returns a node with the specified value.
 
 ### SimpleNode - Represents a node in the binary tree
 

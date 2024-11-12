@@ -3,7 +3,6 @@ package dev.haguel.node;
 import dev.haguel.tree.TreeImpl;
 import lombok.AllArgsConstructor;
 import lombok.Data;
-import lombok.NoArgsConstructor;
 import lombok.ToString;
 
 import java.io.InvalidObjectException;
@@ -43,7 +42,7 @@ public class SimpleNode<T extends Comparable<T>> implements Node<T, T> {
 
     private <V> void ensureCorrectInstance(Node<T, V> node) throws InvalidObjectException {
         if (!(node instanceof SimpleNode)) {
-            throw new InvalidObjectException("Can't make action with current tree because it's not instance of BinaryTree");
+            throw new InvalidObjectException("Can't make action with current tree because it's not instance of SimpleNode");
         }
     }
 
@@ -164,6 +163,7 @@ public class SimpleNode<T extends Comparable<T>> implements Node<T, T> {
         return removeThis();
     }
 
+
     @Override
     public TreeImpl<T, T> getTree() {
         SimpleNode copy = new SimpleNode(this.getKey());
@@ -175,6 +175,37 @@ public class SimpleNode<T extends Comparable<T>> implements Node<T, T> {
         }
 
         return new TreeImpl<>(copy);
+    }
+
+
+    @Override
+    public Node<T, T> findNodeByKey(T key) {
+        if (this.key.equals(key)) {
+            return this;
+        } else if (key.compareTo(this.key) < 0 && left != null) {
+            return left.findNodeByKey(key);
+        } else if (key.compareTo(this.key) > 0 && right != null) {
+            return right.findNodeByKey(key);
+        }
+
+        return null;
+    }
+
+    @Override
+    public Node<T, T> findNodeByValue(T value) {
+        if (this.value.equals(value)) {
+            return this;
+        } else {
+            Node<T, T> foundNode = null;
+            if (left != null) {
+                foundNode = left.findNodeByValue(value);
+            }
+            if (foundNode == null && right != null) {
+                foundNode = right.findNodeByValue(value);
+            }
+
+            return foundNode;
+        }
     }
 
     @Override
@@ -199,6 +230,18 @@ public class SimpleNode<T extends Comparable<T>> implements Node<T, T> {
         ensureCorrectInstance(left);
         this.left = (SimpleNode<T>) left;
         ((SimpleNode<T>) left).setParent(this);
+    }
+
+    @Override
+    public void setParent(Node<T, T> parent) throws InvalidObjectException {
+        if(parent == null) {
+            this.parent = null;
+
+            return;
+        }
+
+        ensureCorrectInstance(parent);
+        this.parent = (SimpleNode<T>) parent;
     }
 
     @Override

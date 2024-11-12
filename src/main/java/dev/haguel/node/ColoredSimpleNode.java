@@ -50,7 +50,7 @@ public class ColoredSimpleNode<T extends Comparable<T>> implements Node<T, T> {
 
     private <V> void ensureCorrectInstance(Node<T, V> node) throws InvalidObjectException {
         if (!(node instanceof ColoredSimpleNode)) {
-            throw new InvalidObjectException("Can't make action with current tree because it's not instance of BinaryTree");
+            throw new InvalidObjectException("Can't make action with current tree because it's not instance of ColoredSimpleNode");
         }
     }
 
@@ -70,21 +70,21 @@ public class ColoredSimpleNode<T extends Comparable<T>> implements Node<T, T> {
         return left == null && right == null;
     }
 
-        private ColoredSimpleNode<T> getDeepestLeft() {
-            if(left == null) {
-                return this;
-            } else {
-                return left.getDeepestLeft();
-            }
+    private ColoredSimpleNode<T> getDeepestLeft() {
+        if(left == null) {
+            return this;
+        } else {
+            return left.getDeepestLeft();
         }
+    }
 
-        private ColoredSimpleNode<T> getDeepestRight() {
-            if(right == null) {
-                return this;
-            } else {
-                return right.getDeepestRight();
-            }
+    private ColoredSimpleNode<T> getDeepestRight() {
+        if(right == null) {
+            return this;
+        } else {
+            return right.getDeepestRight();
         }
+    }
 
     private ColoredSimpleNode<T> getSibling() {
         if(parent == null) {
@@ -96,6 +96,14 @@ public class ColoredSimpleNode<T extends Comparable<T>> implements Node<T, T> {
         } else {
             return parent.getLeft();
         }
+    }
+
+    private void setRed() {
+        this.isBlack = false;
+    }
+
+    private void setBlack() {
+        this.isBlack = true;
     }
 
     private void updateRelations(ColoredSimpleNode<T> newNode, ColoredSimpleNode<T> oldNode, ColoredSimpleNode<T> oldNodeParent) throws InvalidObjectException {
@@ -589,6 +597,36 @@ public class ColoredSimpleNode<T extends Comparable<T>> implements Node<T, T> {
         return new TreeImpl<>(copy);
     }
 
+    @Override
+    public Node<T, T> findNodeByKey(T key) {
+        if (this.getKey().equals(key)) {
+            return this;
+        } else if (key.compareTo(this.getKey()) < 0 && getLeft() != null) {
+            return getLeft().findNodeByKey(key);
+        } else if (key.compareTo(this.getKey()) > 0 && getRight() != null) {
+            return getRight().findNodeByKey(key);
+        }
+
+        return null;
+    }
+
+    @Override
+    public Node<T, T> findNodeByValue(T value) {
+        if (this.getValue().equals(value)) {
+            return this;
+        } else {
+            Node<T, T> foundNode = null;
+            if (getLeft() != null) {
+                foundNode = getLeft().findNodeByValue(value);
+            }
+            if (foundNode == null && getRight() != null) {
+                foundNode = getRight().findNodeByValue(value);
+            }
+
+            return foundNode;
+        }
+    }
+
     public ColoredSimpleNode<T> getRoot() {
         if(parent == null) {
             return this;
@@ -622,16 +660,20 @@ public class ColoredSimpleNode<T extends Comparable<T>> implements Node<T, T> {
     }
 
     @Override
+    public void setParent(Node<T, T> parent) throws InvalidObjectException {
+        if(parent == null) {
+            this.parent = null;
+
+            return;
+        }
+
+        ensureCorrectInstance(parent);
+        this.parent = (ColoredSimpleNode<T>) parent;
+    }
+
+    @Override
     public int compareTo(Node<T, T> o) {
         return Comparator.comparing(ColoredSimpleNode<T>::getKey)
                 .compare(this, (ColoredSimpleNode<T>) o);
-    }
-
-    public void setRed() {
-        this.isBlack = false;
-    }
-
-    public void setBlack() {
-        this.isBlack = true;
     }
 }
