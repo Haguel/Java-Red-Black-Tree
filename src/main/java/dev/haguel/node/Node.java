@@ -15,6 +15,6 @@ public interface Node<T, V> extends Comparable<Node<T, V>> {
     void setLeft(Node<T, V> left) throws InvalidObjectException;
 
     void addNode(Node<T, V> node) throws InvalidObjectException;
-    void removeNode() throws InvalidObjectException;
+    Node<T, V> removeNode() throws InvalidObjectException;
     Tree<T, V> getTree();
 }

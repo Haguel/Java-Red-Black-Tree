@@ -33,7 +33,7 @@ public class RedBlackTreeStarter {
             System.out.println("Whole tree constructed!");
 
             for(int i = 0; i < nodeCount; i++) {
-                coloredNode = coloredNode.removeNodeTest();
+                coloredNode = coloredNode.removeNode();
                 coloredNode = coloredNode.getRoot();
                 ColoredNodePrinter.print(coloredNode);
                 System.out.println();

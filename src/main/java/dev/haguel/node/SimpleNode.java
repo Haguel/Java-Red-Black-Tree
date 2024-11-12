@@ -4,22 +4,34 @@ import dev.haguel.tree.TreeImpl;
 import lombok.AllArgsConstructor;
 import lombok.Data;
 import lombok.NoArgsConstructor;
+import lombok.ToString;
 
 import java.io.InvalidObjectException;
 import java.util.Comparator;
 
 @AllArgsConstructor
 @Data
+@ToString(exclude = {"parent"})
 public class SimpleNode<T extends Comparable<T>> implements Node<T, T> {
     private T key;
     private T value;
     private SimpleNode<T> right, left;
+    private SimpleNode<T> parent;
 
     public SimpleNode(T value) {
         this.value = value;
         this.key = value;
         this.right = null;
         this.left = null;
+        this.parent = null;
+    }
+
+    public SimpleNode(T value, SimpleNode<T> parent) {
+        this.value = value;
+        this.key = value;
+        this.right = null;
+        this.left = null;
+        this.parent = parent;
     }
 
     private void cleanNode() {
@@ -29,48 +41,118 @@ public class SimpleNode<T extends Comparable<T>> implements Node<T, T> {
         value = null;
     }
 
-    private void transformTo(SimpleNode<T> node) {
-        this.right = node.getRight();
-        this.left = node.getLeft();
-        node.key = null;
-        node.value = null;
-
-        node.cleanNode();
-    }
-
-    private void transformTo_remainLeft(SimpleNode<T> node) {
-        this.right = node.getRight();
-        this.value = node.getValue();
-        this.key = node.getKey();
-
-        node.cleanNode();
-    }
-
-    private boolean isEmpty() {
-        return key == null && value == null && right == null && left == null;
-    }
-
     private <V> void ensureCorrectInstance(Node<T, V> node) throws InvalidObjectException {
         if (!(node instanceof SimpleNode)) {
             throw new InvalidObjectException("Can't make action with current tree because it's not instance of BinaryTree");
         }
     }
 
+    private boolean hasBothChildren() {
+        return left != null && right != null;
+    }
+
+    private boolean hasOnlyRightChild() {
+        return left == null && right != null;
+    }
+
+    private boolean hasOnlyLeftChild() {
+        return left != null && right == null;
+    }
+
+    private boolean hasNoChildren() {
+        return left == null && right == null;
+    }
+
+    private SimpleNode<T> getDeepestLeft() {
+        if(left == null) {
+            return this;
+        } else {
+            return left.getDeepestLeft();
+        }
+    }
+
+    private SimpleNode<T> getDeepestRight() {
+        if(right == null) {
+            return this;
+        } else {
+            return right.getDeepestRight();
+        }
+    }
+
+    private void exchangeWith(SimpleNode<T> node) {
+        T tempKey = key;
+        T tempValue = value;
+
+        key = node.getKey();
+        value = node.getValue();
+
+        node.setKey(tempKey);
+        node.setValue(tempValue);
+    }
+
+    private SimpleNode<T> removeThis() throws InvalidObjectException {
+        SimpleNode<T> minRight = right == null ? null : right.getDeepestLeft();
+        SimpleNode<T> maxLeft = left == null ? null : left.getDeepestRight();
+        SimpleNode<T> exchangeNode;
+
+        if (minRight != null) {
+            exchangeNode = minRight;
+        } else if (maxLeft != null) {
+            exchangeNode = maxLeft;
+        } else {
+            cleanNode();
+
+            return this;
+        }
+
+        exchangeWith(exchangeNode);
+
+        SimpleNode<T> exchangeNodeParent = exchangeNode.parent;
+
+        // If exchange node is left child of its parent
+        if(exchangeNodeParent.getLeft() == exchangeNode) {
+            if(exchangeNode.hasOnlyLeftChild()) {
+                // relate its parent to its right child
+                exchangeNodeParent.setLeft(exchangeNode.getLeft());
+            } else if (exchangeNode.hasOnlyRightChild()) {
+                // relate its parent to its left child
+                exchangeNodeParent.setLeft(exchangeNode.getRight());
+            } else {
+                exchangeNodeParent.setLeft(null);
+            }
+        }
+        // If exchange node is right child of its parent
+        else {
+            if(exchangeNode.hasOnlyRightChild()) {
+                // relate its parent to its right child
+                exchangeNodeParent.setRight(exchangeNode.getRight());
+            } else if (exchangeNode.hasOnlyLeftChild()) {
+                // relate its parent to its left child
+                exchangeNodeParent.setRight(exchangeNode.getLeft());
+            } else {
+                exchangeNodeParent.setRight(null);
+            }
+        }
+
+        exchangeNode.cleanNode();
+
+        return this;
+    }
+
     @Override
     public void addNode(Node<T, T> toAdd) throws InvalidObjectException {
-        ensureCorrectInstance(toAdd);
-        SimpleNode<T> toAddNode = (SimpleNode<T>) toAdd;
-        int compare = toAdd.compareTo((Node<T, T>) this);
+        SimpleNode<T> toAddNode = new SimpleNode<>(toAdd.getValue());
+        int compare = toAdd.compareTo(this);
 
         if(compare > 0) {
             if (right == null) {
-                right = toAddNode;
+                setRight(toAddNode);
             } else {
                 right.addNode(toAddNode);
             }
         } else {
             if (left == null) {
-                left = toAddNode;
+                setLeft(toAddNode);
             } else {
                 left.addNode(toAddNode);
             }
@@ -78,45 +160,8 @@ public class SimpleNode<T extends Comparable<T>> implements Node<T, T> {
     }
 
     @Override
-    public void removeNode() throws InvalidObjectException {
-        if(left == null && right == null) {
-            cleanNode();
-
-            return;
-        }
-
-        if(left == null) {
-            transformTo(getRight());
-        } else if (right == null) {
-            transformTo(getLeft());
-        } else {
-            // if right tree DOES NOT have left subtree
-            // -> transform to right subtree but insert current left subtree
-            if (getRight().getLeft() == null) {
-                transformTo_remainLeft(getRight());
-            } else {
-                // if right subtree DOES have left subtree
-                // -> set the deepest node of left subtree
-                SimpleNode<T> deepestLeft = getRight().getLeft();
-                SimpleNode<T> deepestLeftAncestor = getRight();
-
-                while (deepestLeft.getLeft() != null) {
-                    SimpleNode<T> temp = deepestLeft;
-                    deepestLeft = deepestLeft.getLeft();
-                    deepestLeftAncestor = temp;
-                }
-
-                // set node to the current tree and remove it from deepestLeft subtree
-                this.value = deepestLeft.getValue();
-                this.key = deepestLeft.getKey();
-                deepestLeft.removeNode();
-
-                // if deepest is replaced with its right subtree this part would be skipped
-                if(deepestLeftAncestor.left.isEmpty()) {
-                    deepestLeftAncestor.setLeft(null);
-                }
-            }
-        }
+    public SimpleNode<T> removeNode() throws InvalidObjectException {
+        return removeThis();
     }
 
     @Override
@@ -141,6 +186,7 @@ public class SimpleNode<T extends Comparable<T>> implements Node<T, T> {
 
         ensureCorrectInstance(right);
         this.right = (SimpleNode<T>) right;
+        ((SimpleNode<T>) right).setParent(this);
     }
 
     @Override
@@ -152,6 +198,7 @@ public class SimpleNode<T extends Comparable<T>> implements Node<T, T> {
 
         ensureCorrectInstance(left);
         this.left = (SimpleNode<T>) left;
+        ((SimpleNode<T>) left).setParent(this);
     }
 
     @Override
